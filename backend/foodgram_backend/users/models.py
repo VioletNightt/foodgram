@@ -8,6 +8,13 @@ class User(AbstractUser):
         unique=True,
         verbose_name='Email'
     )
+    avatar = models.ImageField(
+        upload_to='users/images',
+        blank=True,
+        verbose_name='Аватар'
+    )
+    is_subscribed = models.BooleanField(default=False)
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
