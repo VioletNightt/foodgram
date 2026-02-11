@@ -42,8 +42,8 @@ class CustomUserSerializer(UserSerializer):
                   'last_name', 'password', 'avatar', 'image_url')
 
     def get_image_url(self, obj):
-        if obj.image:
-            return obj.image.url
+        if obj.avatar:
+            return obj.avatar.url
         return None
 
 
@@ -90,12 +90,13 @@ class RecipeSerializer(serializers.ModelSerializer):
         'get_image_url',
         read_only=True,
     )
+    author = CustomUserSerializer(read_only=True)
 
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'text',
                   'ingredients', 'tags', 'cooking_time', 'author', 'image_url')
-        read_only_fields = ('author', 'image_url')
+        read_only_fields = ('image_url',)
 
     def get_image_url(self, obj):
         if obj.image:
