@@ -1,6 +1,6 @@
 from api.serializers import (
     TagSerializer, IngredientSerializer,
-    RecipeSerizlizer, CustomUserSerializer
+    RecipeSerializer, CustomUserSerializer
 )
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
@@ -26,7 +26,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 class IngredientViewSet(viewsets.ModelViewSet):
     """ViewSet для ингридиентов."""
-
+    
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
@@ -36,4 +36,4 @@ class RecipeViewSet(viewsets.ModelViewSet):
     """ViewSet для рецептов"""
 
     queryset = Recipe.objects.all()
-    serializer_class = RecipeSerizlizer
+    serializer_class = RecipeSerializer

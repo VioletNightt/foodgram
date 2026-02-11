@@ -65,20 +65,23 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     """Сериализатор ингридиентов в рецепте."""
-    id = serializers.IntegerField()
+    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all(),
+                                            source='ingredient')
     name = serializers.ReadOnlyField(source='ingredient.name')
-    measurement_unit = serializers.ReadOnlyField(source='ingredient.measurement_unit')
-    
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit')
+
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
-class RecipeSerizlizer(serializers.ModelSerializer):
+class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор рецептов"""
 
     image = Base64ImageField(required=False, allow_null=True)
-    ingredients = RecipeIngredientSerializer(many=True)
+    ingredients = RecipeIngredientSerializer(many=True,
+                                             source='recipe_ingredient')
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True
@@ -100,7 +103,8 @@ class RecipeSerizlizer(serializers.ModelSerializer):
         return None
 
     def create(self, validated_data):
-        ingredients = validated_data.pop('ingredients')
+        
+        ingredients_data = validated_data.pop('recipe_ingredient')
         tags_data = validated_data.pop('tags')
 
         validated_data['author'] = self.context['request'].user
@@ -109,16 +113,14 @@ class RecipeSerizlizer(serializers.ModelSerializer):
 
         recipe.tags.set(tags_data)
 
-        for ingredient in ingredients:
-            ingredient_id = ingredient['id']
-            amount = ingredient['amount']
-
-            current_ingredient = get_object_or_404(Ingredient,
-                                                   id=ingredient_id)
-
+        for item in ingredients_data:
             RecipeIngredient.objects.create(
-                ingredient=current_ingredient,
                 recipe=recipe,
-                amount=amount
+                ingredient=item['ingredient'],
+                amount=item['amount']
             )
+
         return recipe
+
+
+        
