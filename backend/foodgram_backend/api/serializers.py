@@ -52,7 +52,7 @@ class TagSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Tag
-        fields = ('name', 'slug')
+        fields = ('id', 'name', 'slug')
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -60,20 +60,25 @@ class IngredientSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ingredient
-        fields = ('name', 'measurement_unit')
+        fields = ('id', 'name', 'measurement_unit')
+
+
+class RecipeIngredientSerializer(serializers.Serializer):
+    """Сериализатор ингридиентов в рецепте."""
+    id = serializers.IntegerField()
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ('id', 'ingredient', 'amount')
 
 
 class RecipeSerizlizer(serializers.ModelSerializer):
     """Сериализатор рецептов"""
 
     image = Base64ImageField(required=False, allow_null=True)
-    ingredients = serializers.SlugRelatedField(
-        slug_field='name',
-        queryset=Ingredient.objects.all(),
-        many=True
-    )
-    tags = serializers.SlugRelatedField(
-        slug_field='name',
+    ingredients = RecipeIngredientSerializer(many=True)
+    tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True
     )
@@ -84,9 +89,9 @@ class RecipeSerizlizer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('name', 'image', 'text',
+        fields = ('id', 'name', 'image', 'text',
                   'ingredients', 'tags', 'cooking_time', 'author', 'image_url')
-        read_only_fields = ('author',)
+        read_only_fields = ('author', 'image_url')
 
     def get_image_url(self, obj):
         if obj.image:
@@ -95,11 +100,24 @@ class RecipeSerizlizer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         ingredients = validated_data.pop('ingredients')
-        tags = validated_data.pop('tags')
+        tags_data = validated_data.pop('tags')
+
+        validated_data['author'] = self.context['request'].user
 
         recipe = Recipe.objects.create(**validated_data)
 
-        recipe.ingredients.set(ingredients)
-        recipe.tags.set(tags)
+        recipe.tags.set(tags_data)
 
+        for ingredient in ingredients:
+            ingredient_id = ingredient['id']
+            amount = ingredient['amount']
+
+            current_ingredient = get_object_or_404(Ingredient,
+                                                   id=ingredient_id)
+
+            RecipeIngredient.objects.create(
+                ingredient=current_ingredient,
+                recipe=recipe,
+                amount=amount
+            )
         return recipe
