@@ -78,11 +78,13 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор рецептов"""
-
     image = Base64ImageField(required=False, allow_null=True)
     ingredients = RecipeIngredientSerializer(many=True,
                                              source='recipe_ingredient')
-    tags = TagSerializer(many=True, read_only=True)
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Tag.objects.all()
+    )
     image_url = serializers.SerializerMethodField(
         'get_image_url',
         read_only=True,
@@ -91,24 +93,31 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        fields = ('id', 'name', 'image', 'text',
-                  'ingredients', 'tags', 'cooking_time', 'author', 'image_url')
-        read_only_fields = ('image_url',)
+        fields = (
+            'id', 'name', 'image', 'text',
+            'ingredients', 'tags', 'cooking_time',
+            'author', 'image_url'
+        )
+        read_only_fields = ('image_url',)\
 
     def get_image_url(self, obj):
         if obj.image:
             return obj.image.url
         return None
 
-    def create(self, validated_data):
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['tags'] = TagSerializer(
+            instance.tags.all(), many=True
+        ).data
+        return representation
 
+    def create(self, validated_data):
         ingredients_data = validated_data.pop('recipe_ingredient')
         tags_data = validated_data.pop('tags')
-
         validated_data['author'] = self.context['request'].user
 
         recipe = Recipe.objects.create(**validated_data)
-
         recipe.tags.set(tags_data)
 
         for item in ingredients_data:
@@ -117,27 +126,24 @@ class RecipeSerializer(serializers.ModelSerializer):
                 ingredient=item['ingredient'],
                 amount=item['amount']
             )
-
         return recipe
 
     def update(self, instance, validated_data):
         instance.name = validated_data.get('name', instance.name)
         instance.text = validated_data.get('text', instance.text)
         instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time)
+            'cooking_time', instance.cooking_time
+        )
         instance.image = validated_data.get('image', instance.image)
+        instance.save()
 
         if 'tags' in validated_data:
             tags_data = validated_data.pop('tags')
             instance.tags.set(tags_data)
 
-        instance.save()
-
         if 'recipe_ingredient' in validated_data:
             ingredients_data = validated_data.pop('recipe_ingredient')
-
             RecipeIngredient.objects.filter(recipe=instance).delete()
-
             for item in ingredients_data:
                 RecipeIngredient.objects.create(
                     recipe=instance,
