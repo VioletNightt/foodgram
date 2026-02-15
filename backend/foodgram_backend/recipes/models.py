@@ -111,3 +111,15 @@ class RecipeTag(models.Model):
     class Meta:
         verbose_name = 'Тег рецепта'
         verbose_name_plural = 'Теги рецептов'
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             related_name='favorites')
+    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
+                               related_name='favorited_by_users')
+
+    class Meta:
+        unique_together = ('user', 'recipe')
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранные'

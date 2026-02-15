@@ -90,20 +90,29 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only=True,
     )
     author = CustomUserSerializer(read_only=True)
+    is_favorited = serializers.SerializerMethodField('get_is_favorited',
+                                                     read_only=True)
+    # is_in_shopping_cart = serializers.BooleanField(read_only=True, default=False)
 
     class Meta:
         model = Recipe
         fields = (
             'id', 'name', 'image', 'text',
             'ingredients', 'tags', 'cooking_time',
-            'author', 'image_url'
+            'author', 'image_url', 'is_favorited'
         )
-        read_only_fields = ('image_url',)\
+        read_only_fields = ('image_url',)
 
     def get_image_url(self, obj):
         if obj.image:
             return obj.image.url
         return None
+
+    def get_is_favorited(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.favorited_by_users.filter(user=request.user).exists()
+        return False
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
