@@ -127,10 +127,11 @@ class Favorite(models.Model):
 
 class ShoppingCart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
-                             related_name='shopping_carts')
+                             related_name='shopping_cat')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               related_name='shopping_cart_by_users')
+                               related_name='favorited_by_users')
 
     class Meta:
         unique_together = ('user', 'recipe')
-        verbose_name = 'Список покупок'
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранные'
