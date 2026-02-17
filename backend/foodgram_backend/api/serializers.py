@@ -4,7 +4,7 @@ from djoser.serializers import UserSerializer
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient
-from users.models import User
+from users.models import User, Subscription
 from django.contrib.auth.tokens import default_token_generator
 
 
@@ -92,14 +92,19 @@ class RecipeSerializer(serializers.ModelSerializer):
     author = CustomUserSerializer(read_only=True)
     is_favorited = serializers.SerializerMethodField('get_is_favorited',
                                                      read_only=True)
-    # is_in_shopping_cart = serializers.BooleanField(read_only=True, default=False)
+    is_in_shopping_cart = serializers.SerializerMethodField(
+        'get_is_in_shopping_cart',
+        read_only=True)
+    is_subscribed = serializers.SerializerMethodField('get_is_subscribed',
+                                                      read_only=True)
 
     class Meta:
         model = Recipe
         fields = (
             'id', 'name', 'image', 'text',
             'ingredients', 'tags', 'cooking_time',
-            'author', 'image_url', 'is_favorited'
+            'author', 'image_url', 'is_favorited',
+            'is_in_shopping_cart'
         )
         read_only_fields = ('image_url',)
 
@@ -107,11 +112,26 @@ class RecipeSerializer(serializers.ModelSerializer):
         if obj.image:
             return obj.image.url
         return None
+    
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Subscription.objects.filter(
+                subscriber=request.user,
+                subscribed_to=obj
+            ).exists()
+        return False
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return obj.favorited_by_users.filter(user=request.user).exists()
+        return False
+
+    def get_is_in_shopping_cart(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.shopping_cart_by_users.filter(user=request.user).exists()
         return False
 
     def to_representation(self, instance):
@@ -161,3 +181,64 @@ class RecipeSerializer(serializers.ModelSerializer):
                 )
 
         return instance
+
+
+class SubscriptionRecipeSerializer(serializers.ModelSerializer):
+    """Сериализатор для рецептов в подписке."""
+    image = Base64ImageField(required=False, allow_null=True)
+    image_url = serializers.SerializerMethodField(
+        'get_image_url',
+        read_only=True)
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time', 'image_url')
+        read_only_fields = ('id', 'name', 'image', 'cooking_time')
+
+    def get_image_url(self, obj):
+        if obj.image:
+            return obj.image.url
+        return None
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    """Сериализатор для отображения подписки."""
+    email = serializers.EmailField(source='subscribed_to.email',
+                                   read_only=True)
+    id = serializers.PrimaryKeyRelatedField(source='subscribed_to.id',
+                                            read_only=True)
+    username = serializers.CharField(source='subscribed_to.username',
+                                     read_only=True)
+    first_name = serializers.CharField(source='subscribed_to.first_name',
+                                       read_only=True)
+    last_name = serializers.CharField(source='subscribed_to.last_name',
+                                      read_only=True)
+    is_subscribed = serializers.SerializerMethodField('get_is_subscribed',
+                                                      read_only=True)
+    recipes = serializers.SerializerMethodField('get_recipes', read_only=True)
+    avatar = Base64ImageField(required=False, allow_null=True)
+    avatar_url = serializers.SerializerMethodField(
+        'get_avatar_url',
+        read_only=True
+    )
+
+    class Meta:
+        model = Subscription
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes','avatar')
+
+    def get_avatar_url(self, obj):
+        if obj.avatar:
+            return obj.avatar.url
+        return None
+
+    def get_is_subscribed(self, obj):
+        return True
+
+    def get_recipes(self, obj):
+        user = obj.subscribed_to
+        recipes = user.recipes.all()
+        serializer = SubscriptionRecipeSerializer(recipes,
+                                                  many=True,
+                                                  context=self.context)
+        return serializer.data
