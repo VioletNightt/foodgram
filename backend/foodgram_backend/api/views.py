@@ -40,7 +40,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     filterset_class = RecipeFilter
-    
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[permissions.IsAuthenticated])
@@ -96,7 +95,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Скачивает файл со списком покупок."""
 
         ingredients = RecipeIngredient.objects.filter(
-            recipe__shopping_recipe__user=request.user
+            recipe__shopping_cart_by_users__user=request.user
         ).values(
             'ingredient__name',
             'ingredient__measurement_unit'
@@ -104,7 +103,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         shopping_list = ''
         for ingredient in ingredients:
             shopping_list += (
-                f"{ingredient['ingredient__name']}  - "
+                f"{ingredient['ingredient__name']} - "
                 f"{ingredient['sum']}"
                 f"({ingredient['ingredient__measurement_unit']})\n"
             )
