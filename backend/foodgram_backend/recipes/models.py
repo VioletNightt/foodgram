@@ -64,14 +64,6 @@ class Recipe(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True,
                                       verbose_name='Время создания')
-    is_favorited = models.BooleanField(
-        default=False,
-        verbose_name='Избранное',
-    )
-    is_in_shopping_cart = models.BooleanField(
-        default=False,
-        verbose_name='Покупки',
-    )
 
     class Meta:
         verbose_name = 'Рецепт'
@@ -127,11 +119,10 @@ class Favorite(models.Model):
 
 class ShoppingCart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
-                             related_name='shopping_cat')
+                             related_name='shopping_carts')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               related_name='favorited_by_users')
+                               related_name='shopping_cart_by_users')
 
     class Meta:
         unique_together = ('user', 'recipe')
-        verbose_name = 'Избранное'
-        verbose_name_plural = 'Избранные'
+        verbose_name = 'Список покупок'

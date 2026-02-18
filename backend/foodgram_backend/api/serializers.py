@@ -4,7 +4,7 @@ from djoser.serializers import UserSerializer
 from django.core.files.base import ContentFile
 from rest_framework import serializers
 from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient
-from users.models import User, Subscription
+from users.models import User
 from django.contrib.auth.tokens import default_token_generator
 
 

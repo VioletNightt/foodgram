@@ -1,17 +1,17 @@
-from django.db import IntegrityError
 from api.serializers import (
     TagSerializer, IngredientSerializer,
     RecipeSerializer, CustomUserSerializer
 )
+from django.db.models import Sum
+from django.http import HttpResponse
 from recipes.models import Favorite, ShoppingCart
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
-from recipes.models import Tag, Ingredient, Recipe
-from users.models import User
+from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient
+from .filters import RecipeFilter
 
 
 class CustomUserViewSet(UserViewSet):
@@ -39,6 +39,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
+    filterset_class = RecipeFilter
+    
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[permissions.IsAuthenticated])
@@ -86,3 +88,31 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=['get'],
+            permission_classes=[permissions.IsAuthenticated],
+            url_path='download_shopping_cart')
+    def download_shopping_cart(self, request):
+        """Скачивает файл со списком покупок."""
+
+        ingredients = RecipeIngredient.objects.filter(
+            recipe__shopping_recipe__user=request.user
+        ).values(
+            'ingredient__name',
+            'ingredient__measurement_unit'
+        ).annotate(sum=Sum('amount'))
+        shopping_list = ''
+        for ingredient in ingredients:
+            shopping_list += (
+                f"{ingredient['ingredient__name']}  - "
+                f"{ingredient['sum']}"
+                f"({ingredient['ingredient__measurement_unit']})\n"
+            )
+        return HttpResponse(shopping_list, content_type='text/plain')
+
+    @action(detail=True, methods=['get'], url_path='get-link')
+    def get_link(self, request, pk=None):
+        """Возвращает короткую ссылку на рецепт."""
+        recipe = get_object_or_404(Recipe, id=pk)
+        return Response({'short-link': f'https://foodgram.example.org/s/{recipe.id}'},
+                        status=status.HTTP_200_OK)
