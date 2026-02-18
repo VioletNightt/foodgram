@@ -90,11 +90,8 @@ class RecipeSerializer(serializers.ModelSerializer):
         read_only=True,
     )
     author = CustomUserSerializer(read_only=True)
-    is_favorited = serializers.SerializerMethodField('get_is_favorited',
-                                                     read_only=True)
-    is_in_shopping_cart = serializers.SerializerMethodField(
-        'get_is_in_shopping_cart',
-        read_only=True)
+    is_favorited = serializers.SerializerMethodField()
+    is_in_shopping_cart = serializers.SerializerMethodField()
 
     class Meta:
         model = Recipe

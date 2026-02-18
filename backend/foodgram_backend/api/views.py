@@ -46,14 +46,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
-            try:
-                Favorite.objects.create(user=request.user, recipe=recipe)
-            except Exception:
+            favorite, created = Favorite.objects.get_or_create(
+                user=request.user, recipe=recipe)
+            if not created:
                 return Response(
                     {"errors": ["Рецепт уже в избранном."]},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            serializer = self.get_serializer(recipe)
+            serializer = self.get_serializer(recipe,
+                                             context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         deleted_count, _ = Favorite.objects.filter(user=request.user,
                                                    recipe=recipe).delete()
@@ -62,22 +63,25 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 {"errors": ["Рецепт не в избранном."]},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        serializer = self.get_serializer(recipe, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[permissions.IsAuthenticated])
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
-            try:
-                ShoppingCart.objects.create(user=request.user, recipe=recipe)
-            except Exception:
+            cart_item, created = ShoppingCart.objects.get_or_create(
+                user=request.user, recipe=recipe)
+            if not created:
                 return Response(
                     {"errors": ["Рецепт уже в списке покупок."]},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            serializer = self.get_serializer(recipe)
+            serializer = self.get_serializer(recipe,
+                                             context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+
         elif request.method == 'DELETE':
             deleted_count, _ = ShoppingCart.objects.filter(
                 user=request.user, recipe=recipe).delete()
@@ -86,7 +90,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     {"errors": ["Рецепта нет в списке покупок."]},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            return Response(status=status.HTTP_204_NO_CONTENT)
+            serializer = self.get_serializer(recipe,
+                                             context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['get'],
             permission_classes=[permissions.IsAuthenticated],
@@ -113,5 +119,5 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_link(self, request, pk=None):
         """Возвращает короткую ссылку на рецепт."""
         recipe = get_object_or_404(Recipe, id=pk)
-        return Response({'short-link': f'https://foodgram.example.org/s/{recipe.id}'},
+        return Response({'short-link': f'http://localhost/recipes/{recipe.id}'},
                         status=status.HTTP_200_OK)
