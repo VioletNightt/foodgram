@@ -1,23 +1,58 @@
 from api.serializers import (
     TagSerializer, IngredientSerializer,
-    RecipeSerializer, CustomUserSerializer
+    RecipeSerializer, CustomUserSerializer,
 )
 from django.db.models import Sum
 from django.http import HttpResponse
-from recipes.models import Favorite, ShoppingCart
+from recipes.models import Favorite, ShoppingCart, Follow
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient
+from users.models import User
 from .filters import RecipeFilter
 
 
 class CustomUserViewSet(UserViewSet):
-    """ViewSet для регистрации пользователя"""
+    """ViewSet для пользователя"""
 
     serializer_class = CustomUserSerializer
+    
+
+    @action(
+        detail=True, methods=('post', 'delete'),
+        permission_classes=(permissions.IsAuthenticated,))
+    def subscribe(self, request, id):
+
+        user = request.user
+        author = get_object_or_404(User, id=id)
+        if user == author:
+            return Response(
+                {"errors": ["Нельзя подписаться на самого себя"]},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if request.method == 'POST':
+            follow, created = Follow.objects.get_or_create(
+                user=user, author=author)
+            if not created:
+                return Response(
+                    {"errors": ["Вы уже подписаны на этого автора."]},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            serializer = self.get_serializer(author,
+                                             context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        deleted_count, _ = Follow.objects.filter(user=user,
+                                                 author=author).delete()
+        if deleted_count == 0:
+            return Response(
+                {"errors": ["Вы не были подписаны на автора."]},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        serializer = self.get_serializer(author, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -41,13 +76,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     filterset_class = RecipeFilter
 
-    @action(detail=True, methods=['post', 'delete'],
-            permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=('post', 'delete'),
+            permission_classes=(permissions.IsAuthenticated))
     def favorite(self, request, pk=None):
+        user = request.user
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
             favorite, created = Favorite.objects.get_or_create(
-                user=request.user, recipe=recipe)
+                user=user, recipe=recipe)
             if not created:
                 return Response(
                     {"errors": ["Рецепт уже в избранном."]},
@@ -70,9 +106,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             permission_classes=[permissions.IsAuthenticated])
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
+        user = request.user
         if request.method == 'POST':
             cart_item, created = ShoppingCart.objects.get_or_create(
-                user=request.user, recipe=recipe)
+                user=user, recipe=recipe)
             if not created:
                 return Response(
                     {"errors": ["Рецепт уже в списке покупок."]},

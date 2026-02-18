@@ -13,7 +13,6 @@ class User(AbstractUser):
         blank=True,
         verbose_name='Аватар'
     )
-    is_subscribed = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
@@ -21,6 +20,7 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        ordering = ('id',)
 
     def __str__(self):
-        return self.email
+        return self.username

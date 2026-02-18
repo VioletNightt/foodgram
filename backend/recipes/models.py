@@ -126,3 +126,18 @@ class ShoppingCart(models.Model):
     class Meta:
         unique_together = ('user', 'recipe')
         verbose_name = 'Список покупок'
+
+
+class Follow(models.Model):
+
+    author = models.ForeignKey(User, related_name='follow',
+                               on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE,
+                             related_name='follower')
+
+    class Meta:
+        """Мета-параметры модели"""
+
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+        unique_together = ('user', 'author')

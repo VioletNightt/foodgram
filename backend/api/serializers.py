@@ -1,11 +1,9 @@
 import base64
-from django.shortcuts import get_object_or_404
 from djoser.serializers import UserSerializer
 from django.core.files.base import ContentFile
 from rest_framework import serializers
-from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient
+from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient, Follow
 from users.models import User
-from django.contrib.auth.tokens import default_token_generator
 
 
 class Base64ImageField(serializers.ImageField):
@@ -35,16 +33,25 @@ class CustomUserSerializer(UserSerializer):
         'get_image_url',
         read_only=True,
     )
+    is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name',
-                  'last_name', 'password', 'avatar', 'image_url')
+                  'last_name', 'password', 'avatar', 'image_url',
+                  'is_subscribed')
 
     def get_image_url(self, obj):
         if obj.avatar:
             return obj.avatar.url
         return None
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Follow.objects.filter(user=request.user,
+                                         author=obj).exists()
+        return False
 
 
 class TagSerializer(serializers.ModelSerializer):
