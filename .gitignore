@@ -1,6 +1,5 @@
 frontend/node_modules
 infra/frontend/build
-.env
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -106,15 +105,9 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
-.venv
-.venv/
-.env/
-env/
+
 venv/
-ENV/
-env.bak/
-venv.bak/
+
 
 # Spyder project settings
 .spyderproject
