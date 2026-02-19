@@ -174,3 +174,49 @@ class RecipeSerializer(serializers.ModelSerializer):
                 )
 
         return instance
+
+
+class RecipeSubsSerializer(serializers.ModelSerializer):
+    """Короткий сериализатор для рецептов в подписках"""
+    image = Base64ImageField(read_only=True)
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Recipe
+        fields = ('id', 'name', 'image', 'cooking_time', 'image_url')
+
+    def get_image_url(self, obj):
+        if obj.image:
+            return obj.image.url
+        return None
+
+
+class FollowSerializer(CustomUserSerializer):
+    """Сериализатор для модели Follow."""
+
+    recipes = serializers.SerializerMethodField(
+        read_only=True,
+        method_name='get_recipes')
+    recipes_count = serializers.SerializerMethodField(
+        read_only=True
+    )
+
+    class Meta:
+
+        model = User
+        fields = ('email', 'id', 'username', 'first_name', 'last_name',
+                  'is_subscribed', 'recipes', 'recipes_count', 'avatar',
+                  'image_url')
+
+    def get_recipes(self, obj):
+        request = self.context.get('request')
+        recipes = obj.recipes.all()
+        
+        return RecipeSubsSerializer(recipes, many=True,
+                                    context={'request': request}).data
+
+    @staticmethod
+    def get_recipes_count(obj):
+        """Метод для получения количества рецептов"""
+
+        return obj.recipes.count()

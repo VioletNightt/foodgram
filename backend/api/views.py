@@ -1,6 +1,7 @@
 from api.serializers import (
     TagSerializer, IngredientSerializer,
     RecipeSerializer, CustomUserSerializer,
+    FollowSerializer
 )
 from django.db.models import Sum
 from django.http import HttpResponse
@@ -19,7 +20,16 @@ class CustomUserViewSet(UserViewSet):
     """ViewSet для пользователя"""
 
     serializer_class = CustomUserSerializer
-    
+
+    @action(detail=False, methods=['get'],
+            permission_classes=[permissions.IsAuthenticated])
+    def subscriptions(self, request):
+        """Получить список подписок текущего пользователя"""
+        authors = User.objects.filter(follow__user=request.user)
+
+        serializer = FollowSerializer(authors, many=True,
+                                      context={'request': request})
+        return Response(serializer.data)
 
     @action(
         detail=True, methods=('post', 'delete'),
@@ -52,7 +62,7 @@ class CustomUserViewSet(UserViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         serializer = self.get_serializer(author, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
