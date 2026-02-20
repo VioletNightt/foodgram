@@ -17,9 +17,10 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-class CustomUserSerializer(UserSerializer):
+class CustomUserSerializer(serializers.ModelSerializer):
 
-    queryset = User.objects.all()       
+    first_name = serializers.CharField(required=True)
+    last_name = serializers.CharField(required=True)   
 
     email = serializers.EmailField(
         required=True,
@@ -29,30 +30,20 @@ class CustomUserSerializer(UserSerializer):
         required=True,
         max_length=100
     )
-
-    avatar = Base64ImageField(required=False, allow_null=True)
-    image_url = serializers.SerializerMethodField(
-        'get_image_url',
-        read_only=True,
-    )
-    is_subscribed = serializers.SerializerMethodField()
+    avatar = Base64ImageField(required=False, allow_null=True, use_url=True)
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name',
-                  'last_name', 'password', 'avatar', 'image_url',
-                  'is_subscribed')
-
-    def get_image_url(self, obj):
-        if obj.avatar:
-            return obj.avatar.url
-        return None
+                'last_name', 'avatar', 'is_subscribed')
+        extra_kwargs = {'password': {'write_only': True}}
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return Follow.objects.filter(user=request.user,
-                                         author=obj).exists()
+                                        author=obj).exists()
         return False
 
 
@@ -89,7 +80,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор рецептов"""
     image = Base64ImageField(required=False, allow_null=True)
     ingredients = RecipeIngredientSerializer(many=True,
-                                             source='recipe_ingredient')
+                                            source='recipe_ingredient')
     tags = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=Tag.objects.all()
@@ -207,8 +198,7 @@ class FollowSerializer(CustomUserSerializer):
 
         model = User
         fields = ('email', 'id', 'username', 'first_name', 'last_name',
-                  'is_subscribed', 'recipes', 'recipes_count', 'avatar',
-                  'image_url')
+                'is_subscribed', 'recipes', 'recipes_count', 'avatar',)
 
     def get_recipes(self, obj):
         request = self.context.get('request')

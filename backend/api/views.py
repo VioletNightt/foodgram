@@ -25,7 +25,17 @@ class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    pagination_class = LimitOffsetPagination
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'create']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
+    @action(detail=False, methods=['get'],)
+    def me(self, request):
+        user = request.user
+        serializer = CustomUserSerializer(user, context={'request': request})
+        return Response(serializer.data)
 
     @action(detail=False, methods=['get'],
             permission_classes=[permissions.IsAuthenticated])
@@ -33,7 +43,7 @@ class CustomUserViewSet(UserViewSet):
         """Получить список подписок текущего пользователя"""
         authors = User.objects.filter(followers__user=request.user)
 
-        if authors:    
+        if authors:
             page = self.paginate_queryset(authors)
             serializer = FollowSerializer(page, many=True,
                                           context={'request': request})
@@ -71,7 +81,7 @@ class CustomUserViewSet(UserViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
     @action(detail=False, methods=('put', 'delete'), url_path='me/avatar',
             permission_classes=[permissions.IsAuthenticated])
     def avatar(self, request):
@@ -83,7 +93,10 @@ class CustomUserViewSet(UserViewSet):
                                               context={'request': request})
             if serializer.is_valid():
                 serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+                return Response({'avatar': serializer.data.get('avatar')},
+                                status=status.HTTP_200_OK)
+            return Response(serializer.errors,
+                            status=status.HTTP_400_BAD_REQUEST)
         if not user.avatar:
             return Response({"error": "У пользователя нет аватара"},
                             status=status.HTTP_400_BAD_REQUEST)
