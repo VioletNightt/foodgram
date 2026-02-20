@@ -27,6 +27,12 @@ class CustomUserViewSet(UserViewSet):
         """Получить список подписок текущего пользователя"""
         authors = User.objects.filter(follow__user=request.user)
 
+        page = self.paginate_queryset(authors)
+        if page:
+            serializer = FollowSerializer(page, many=True,
+                                          context={'request': request})
+            return self.get_paginated_response(serializer.data)
+
         serializer = FollowSerializer(authors, many=True,
                                       context={'request': request})
         return Response(serializer.data)
@@ -51,8 +57,7 @@ class CustomUserViewSet(UserViewSet):
                     {"errors": ["Вы уже подписаны на этого автора."]},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            serializer = self.get_serializer(author,
-                                             context={'request': request})
+            serializer = FollowSerializer(author, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         deleted_count, _ = Follow.objects.filter(user=user,
                                                  author=author).delete()
@@ -61,7 +66,6 @@ class CustomUserViewSet(UserViewSet):
                 {"errors": ["Вы не были подписаны на автора."]},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        serializer = self.get_serializer(author, context={'request': request})
         return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
 
