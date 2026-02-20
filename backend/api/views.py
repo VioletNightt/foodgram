@@ -27,15 +27,13 @@ class CustomUserViewSet(UserViewSet):
         """Получить список подписок текущего пользователя"""
         authors = User.objects.filter(follow__user=request.user)
 
-        page = self.paginate_queryset(authors)
-        if page:
+        if authors:    
+            page = self.paginate_queryset(authors)
             serializer = FollowSerializer(page, many=True,
                                           context={'request': request})
             return self.get_paginated_response(serializer.data)
-
-        serializer = FollowSerializer(authors, many=True,
-                                      context={'request': request})
-        return Response(serializer.data)
+        return Response('Вы ни на кого не подписаны.',
+                        status=status.HTTP_400_BAD_REQUEST)
 
     @action(
         detail=True, methods=('post', 'delete'),
@@ -66,7 +64,7 @@ class CustomUserViewSet(UserViewSet):
                 {"errors": ["Вы не были подписаны на автора."]},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
