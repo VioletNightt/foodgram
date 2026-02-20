@@ -65,6 +65,24 @@ class CustomUserViewSet(UserViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=False, methods=('put', 'delete'), url_path='me/avatar',
+            permission_classes=[permissions.IsAuthenticated])
+    def avatar(self, request):
+        user = request.user
+        if request.method == 'PUT':
+            serializer = CustomUserSerializer(user,
+                                              data=request.data,
+                                              partial=True,
+                                              context={'request': request})
+            if serializer.is_valid():
+                serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        if not user.avatar:
+            return Response({"error": "У пользователя нет аватара"},
+                            status=status.HTTP_400_BAD_REQUEST)
+        user.avatar.delete(save=True)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
