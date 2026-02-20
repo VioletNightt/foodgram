@@ -19,6 +19,8 @@ class Base64ImageField(serializers.ImageField):
 
 class CustomUserSerializer(UserSerializer):
 
+    queryset = User.objects.all()       
+
     email = serializers.EmailField(
         required=True,
         max_length=100
@@ -118,13 +120,13 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return obj.favorited_by_users.filter(user=request.user).exists()
+            return obj.favorites.filter(user=request.user).exists()
         return False
     
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return obj.shopping_cart_by_users.filter(user=request.user).exists()
+            return obj.shopping_carts.filter(user=request.user).exists()
         return False
 
     def to_representation(self, instance):

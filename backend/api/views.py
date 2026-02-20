@@ -25,7 +25,7 @@ class CustomUserViewSet(UserViewSet):
             permission_classes=[permissions.IsAuthenticated])
     def subscriptions(self, request):
         """Получить список подписок текущего пользователя"""
-        authors = User.objects.filter(follow__user=request.user)
+        authors = User.objects.filter(followers__user=request.user)
 
         if authors:    
             page = self.paginate_queryset(authors)
@@ -168,7 +168,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Скачивает файл со списком покупок."""
 
         ingredients = RecipeIngredient.objects.filter(
-            recipe__shopping_cart_by_users__user=request.user
+            recipe__shopping_carts__user=request.user
         ).values(
             'ingredient__name',
             'ingredient__measurement_unit'

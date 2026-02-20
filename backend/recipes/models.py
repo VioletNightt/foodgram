@@ -109,7 +109,7 @@ class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
                              related_name='favorites')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               related_name='favorited_by_users')
+                               related_name='favorites')
 
     class Meta:
         unique_together = ('user', 'recipe')
@@ -121,7 +121,7 @@ class ShoppingCart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE,
                              related_name='shopping_carts')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
-                               related_name='shopping_cart_by_users')
+                               related_name='shopping_carts')
 
     class Meta:
         unique_together = ('user', 'recipe')
@@ -130,10 +130,10 @@ class ShoppingCart(models.Model):
 
 class Follow(models.Model):
 
-    author = models.ForeignKey(User, related_name='follow',
+    author = models.ForeignKey(User, related_name='followers',
                                on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE,
-                             related_name='follower')
+                             related_name='following')
 
     class Meta:
         """Мета-параметры модели"""

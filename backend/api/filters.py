@@ -18,13 +18,13 @@ class RecipeFilter(FilterSet):
     def is_in_favorites_filter(self, queryset, name, value):
         if value == 1:
             user = self.request.user
-            return queryset.filter(favorited_by_users__user=user)
+            return queryset.filter(favorites__user=user)
         return queryset
 
     def is_in_shoppingcart_filter(self, queryset, name, value):
         if value == 1:
             user = self.request.user
-            return queryset.filter(shopping_cart_by_users__user=user)
+            return queryset.filter(shopping_carts__user=user)
         return queryset
 
     class Meta:
