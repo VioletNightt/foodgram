@@ -9,7 +9,7 @@ from recipes.models import Favorite, ShoppingCart, Follow
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
 from rest_framework.response import Response
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, status, mixins
 from rest_framework.decorators import action
 from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient
 from users.models import User
@@ -87,6 +87,11 @@ class CustomUserViewSet(UserViewSet):
     def avatar(self, request):
         user = request.user
         if request.method == 'PUT':
+            avatar_data = request.data.get('avatar')
+            if not avatar_data:
+                return Response(
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             serializer = CustomUserSerializer(user,
                                               data=request.data,
                                               partial=True,
@@ -111,7 +116,9 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
 
 
-class IngredientViewSet(viewsets.ModelViewSet):
+class IngredientViewSet(mixins.ListModelMixin, 
+                        mixins.RetrieveModelMixin,
+                        viewsets.GenericViewSet):
     """ViewSet для ингридиентов."""
 
     queryset = Ingredient.objects.all()
