@@ -14,12 +14,18 @@ from rest_framework.decorators import action
 from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient
 from users.models import User
 from .filters import RecipeFilter
+from rest_framework.pagination import LimitOffsetPagination
+from .pagination import CustomPagination
+from .permissions import IsAuthorOrReadOnly
 
 
 class CustomUserViewSet(UserViewSet):
     """ViewSet для пользователя"""
 
+    queryset = User.objects.all()
     serializer_class = CustomUserSerializer
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    pagination_class = LimitOffsetPagination
 
     @action(detail=False, methods=['get'],
             permission_classes=[permissions.IsAuthenticated])
@@ -88,6 +94,7 @@ class CustomUserViewSet(UserViewSet):
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+    permission_classes = (permissions.AllowAny,)
     pagination_class = None
 
 
@@ -97,6 +104,8 @@ class IngredientViewSet(viewsets.ModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
+    search_fields = ('^name',)
+    permission_classes = (permissions.AllowAny,)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -105,6 +114,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     filterset_class = RecipeFilter
+    pagination_class = CustomPagination
+    permission_classes = (IsAuthorOrReadOnly,)
 
     @action(detail=True, methods=('post', 'delete'),
             permission_classes=(permissions.IsAuthenticated))
