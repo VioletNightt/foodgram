@@ -82,10 +82,7 @@ class RecipeIngredient(models.Model):
     ingredient = models.ForeignKey(Ingredient,
                                    on_delete=models.CASCADE,
                                    verbose_name='Ингридиент')
-    amount = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        verbose_name='Колличество')
+    amount = models.IntegerField(verbose_name='Колличество')
 
     class Meta:
         verbose_name = 'Ингредиент рецепта'

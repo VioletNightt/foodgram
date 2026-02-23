@@ -1,7 +1,7 @@
 from api.serializers import (
     TagSerializer, IngredientSerializer,
     RecipeSerializer, CustomUserSerializer,
-    FollowSerializer
+    FollowSerializer, RecipeShortSerializer
 )
 from django.db.models import Sum
 from django.http import HttpResponse
@@ -14,7 +14,6 @@ from rest_framework.decorators import action
 from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient
 from users.models import User
 from .filters import RecipeFilter
-from rest_framework.pagination import LimitOffsetPagination
 from .pagination import CustomPagination
 from .permissions import IsAuthorOrReadOnly
 
@@ -25,6 +24,7 @@ class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    pagination_class = CustomPagination
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'create']:
@@ -43,13 +43,10 @@ class CustomUserViewSet(UserViewSet):
         """Получить список подписок текущего пользователя"""
         authors = User.objects.filter(followers__user=request.user)
 
-        if authors:
-            page = self.paginate_queryset(authors)
-            serializer = FollowSerializer(page, many=True,
-                                          context={'request': request})
-            return self.get_paginated_response(serializer.data)
-        return Response('Вы ни на кого не подписаны.',
-                        status=status.HTTP_400_BAD_REQUEST)
+        page = self.paginate_queryset(authors)
+        serializer = FollowSerializer(page, many=True,
+                                      context={'request': request})
+        return self.get_paginated_response(serializer.data)
 
     @action(
         detail=True, methods=('post', 'delete'),
@@ -138,7 +135,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthorOrReadOnly,)
 
     @action(detail=True, methods=('post', 'delete'),
-            permission_classes=(permissions.IsAuthenticated))
+            permission_classes=(permissions.IsAuthenticated,))
     def favorite(self, request, pk=None):
         user = request.user
         recipe = get_object_or_404(Recipe, pk=pk)
@@ -150,8 +147,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     {"errors": ["Рецепт уже в избранном."]},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            serializer = self.get_serializer(recipe,
-                                             context={'request': request})
+            serializer = RecipeShortSerializer(recipe,
+                                               context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         deleted_count, _ = Favorite.objects.filter(user=request.user,
                                                    recipe=recipe).delete()
@@ -161,7 +158,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         serializer = self.get_serializer(recipe, context={'request': request})
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'],
             permission_classes=[permissions.IsAuthenticated])
@@ -176,8 +173,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     {"errors": ["Рецепт уже в списке покупок."]},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            serializer = self.get_serializer(recipe,
-                                             context={'request': request})
+            serializer = RecipeShortSerializer(recipe,
+                                               context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         elif request.method == 'DELETE':
@@ -190,7 +187,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 )
             serializer = self.get_serializer(recipe,
                                              context={'request': request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'],
             permission_classes=[permissions.IsAuthenticated],

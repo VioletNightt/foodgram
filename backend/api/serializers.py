@@ -70,6 +70,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     name = serializers.ReadOnlyField(source='ingredient.name')
     measurement_unit = serializers.ReadOnlyField(
         source='ingredient.measurement_unit')
+    amount = serializers.IntegerField(min_value=1)
 
     class Meta:
         model = RecipeIngredient
@@ -78,17 +79,18 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 class RecipeSerializer(serializers.ModelSerializer):
     """Сериализатор рецептов"""
-    image = Base64ImageField(required=False, allow_null=True)
+    image = Base64ImageField(use_url=True, required=True)
     ingredients = RecipeIngredientSerializer(many=True,
-                                            source='recipe_ingredient')
+                                             required=True,
+                                             source='recipe_ingredient')
     tags = serializers.PrimaryKeyRelatedField(
         many=True,
-        queryset=Tag.objects.all()
+        queryset=Tag.objects.all(),
+        required=True
     )
-    image_url = serializers.SerializerMethodField(
-        'get_image_url',
-        read_only=True,
-    )
+    name = serializers.CharField(required=True, max_length=256)
+    text = serializers.CharField(required=True)
+    cooking_time = serializers.IntegerField(required=True, min_value=1)
     author = CustomUserSerializer(read_only=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
@@ -98,15 +100,9 @@ class RecipeSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'name', 'image', 'text',
             'ingredients', 'tags', 'cooking_time',
-            'author', 'image_url', 'is_favorited',
+            'author', 'is_favorited',
             'is_in_shopping_cart'
         )
-        read_only_fields = ('image_url',)
-
-    def get_image_url(self, obj):
-        if obj.image:
-            return obj.image.url
-        return None
 
     def get_is_favorited(self, obj):
         request = self.context.get('request')
@@ -126,6 +122,37 @@ class RecipeSerializer(serializers.ModelSerializer):
             instance.tags.all(), many=True
         ).data
         return representation
+    
+    def validate(self, data):
+
+        ingredients = self.initial_data.get('ingredients')
+        if not ingredients:
+            raise serializers.ValidationError(
+                'Нельзя сделать рецепт без ингридиентов.'
+            )
+        lst_ingredient = []
+
+        for ingredient in ingredients:
+            if ingredient['id'] in lst_ingredient:
+                raise serializers.ValidationError(
+                    'Ингредиенты должны быть уникальными.'
+                )
+            lst_ingredient.append(ingredient['id'])
+
+        tags = self.initial_data.get('tags')
+        if not tags:
+            raise serializers.ValidationError(
+                'Нельзя сделать рецепт без тегов.'
+            )
+        lst_tags = []
+        for tag in tags:
+            if tag in lst_tags:
+                raise serializers.ValidationError(
+                    'Теги должны быть уникальными.'
+                )
+            lst_tags.append(tag)
+
+        return data
 
     def create(self, validated_data):
         ingredients_data = validated_data.pop('recipe_ingredient')
@@ -169,19 +196,13 @@ class RecipeSerializer(serializers.ModelSerializer):
         return instance
 
 
-class RecipeSubsSerializer(serializers.ModelSerializer):
+class RecipeShortSerializer(serializers.ModelSerializer):
     """Короткий сериализатор для рецептов в подписках"""
-    image = Base64ImageField(read_only=True)
-    image_url = serializers.SerializerMethodField()
+    image = Base64ImageField(use_url=True)
 
     class Meta:
         model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time', 'image_url')
-
-    def get_image_url(self, obj):
-        if obj.image:
-            return obj.image.url
-        return None
+        fields = ('id', 'name', 'image', 'cooking_time')
 
 
 class FollowSerializer(CustomUserSerializer):
@@ -207,12 +228,10 @@ class FollowSerializer(CustomUserSerializer):
         if limit:
             limit = int(limit)
             recipes = recipes[:limit]
-        
-        return RecipeSubsSerializer(recipes, many=True,
+        return RecipeShortSerializer(recipes, many=True,
                                     context={'request': request}).data
 
     @staticmethod
     def get_recipes_count(obj):
-        """Метод для получения количества рецептов"""
 
         return obj.recipes.count()
