@@ -1,8 +1,6 @@
 import base64
-
 from django.core.files.base import ContentFile
 from rest_framework import serializers
-
 from recipes.models import Follow, Ingredient, Recipe, RecipeIngredient, Tag
 from users.models import User
 
