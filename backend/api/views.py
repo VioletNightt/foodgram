@@ -11,6 +11,7 @@ from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from users.models import User
+from foodgram_backend.settings import DOMAIN
 
 from .filters import RecipeFilter
 from .pagination import CustomPagination
@@ -214,5 +215,5 @@ class RecipeViewSet(viewsets.ModelViewSet):
         """Возвращает короткую ссылку на рецепт."""
         recipe = get_object_or_404(Recipe, id=pk)
         return Response(
-            {'short-link': f'http://localhost/recipes/{recipe.id}'},
+            {'short-link': f'https://{DOMAIN}/recipes/{recipe.id}'},
             status=status.HTTP_200_OK)
