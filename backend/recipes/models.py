@@ -1,10 +1,11 @@
-from django.db import models
 from django.core.validators import MinValueValidator
+from django.db import models
 
 from users.models import User
 
 
 class Tag(models.Model):
+    """Модель тегов """
     name = models.CharField(max_length=200,
                             unique=True,
                             verbose_name='Название')
@@ -21,6 +22,7 @@ class Tag(models.Model):
 
 
 class Ingredient(models.Model):
+    """Модель ингредиентов"""
     name = models.CharField(max_length=200,
                             verbose_name='Название')
     measurement_unit = models.CharField(max_length=50,
@@ -36,6 +38,8 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
+    """Модель рецептов"""
+
     author = models.ForeignKey(
         User,
         verbose_name='Автор',
@@ -75,6 +79,7 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
+    """Модель связь рецетов и ингредиентов"""
     recipe = models.ForeignKey(Recipe,
                                on_delete=models.CASCADE,
                                verbose_name='Рецепт',
@@ -90,6 +95,8 @@ class RecipeIngredient(models.Model):
 
 
 class RecipeTag(models.Model):
+    """Модель связь рецептов и тегов"""
+
     recipe = models.ForeignKey(Recipe,
                                on_delete=models.CASCADE,
                                verbose_name='Рецепт')
@@ -103,6 +110,8 @@ class RecipeTag(models.Model):
 
 
 class Favorite(models.Model):
+    """Модель для избранного"""
+
     user = models.ForeignKey(User, on_delete=models.CASCADE,
                              related_name='favorites')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
@@ -115,6 +124,8 @@ class Favorite(models.Model):
 
 
 class ShoppingCart(models.Model):
+    """Модель для списка покупок"""
+
     user = models.ForeignKey(User, on_delete=models.CASCADE,
                              related_name='shopping_carts')
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE,
@@ -126,6 +137,7 @@ class ShoppingCart(models.Model):
 
 
 class Follow(models.Model):
+    """Модель для подписок"""
 
     author = models.ForeignKey(User, related_name='followers',
                                on_delete=models.CASCADE)

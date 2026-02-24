@@ -1,18 +1,18 @@
-from api.serializers import (
-    TagSerializer, IngredientSerializer,
-    RecipeSerializer, CustomUserSerializer,
-    FollowSerializer, RecipeShortSerializer
-)
 from django.db.models import Sum
 from django.http import HttpResponse
-from recipes.models import Favorite, ShoppingCart, Follow
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
-from rest_framework.response import Response
-from rest_framework import viewsets, permissions, status, mixins
+from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
-from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient
+from rest_framework.response import Response
+
+from api.serializers import (CustomUserSerializer, FollowSerializer,
+                             IngredientSerializer, RecipeSerializer,
+                             RecipeShortSerializer, TagSerializer)
+from recipes.models import (Favorite, Follow, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
 from users.models import User
+
 from .filters import RecipeFilter
 from .pagination import CustomPagination
 from .permissions import IsAuthorOrReadOnly
@@ -113,7 +113,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
 
 
-class IngredientViewSet(mixins.ListModelMixin, 
+class IngredientViewSet(mixins.ListModelMixin,
                         mixins.RetrieveModelMixin,
                         viewsets.GenericViewSet):
     """ViewSet для ингридиентов."""
@@ -214,5 +214,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_link(self, request, pk=None):
         """Возвращает короткую ссылку на рецепт."""
         recipe = get_object_or_404(Recipe, id=pk)
-        return Response({'short-link': f'http://localhost/recipes/{recipe.id}'},
-                        status=status.HTTP_200_OK)
+        return Response(
+            {'short-link': f'http://localhost/recipes/{recipe.id}'},
+            status=status.HTTP_200_OK)

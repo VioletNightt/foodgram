@@ -1,12 +1,14 @@
 import base64
-from djoser.serializers import UserSerializer
+
 from django.core.files.base import ContentFile
 from rest_framework import serializers
-from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient, Follow
+
+from recipes.models import Follow, Ingredient, Recipe, RecipeIngredient, Tag
 from users.models import User
 
 
 class Base64ImageField(serializers.ImageField):
+    """Кастомное поле для перевода картинки в base64"""
     def to_internal_value(self, data):
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')
@@ -18,9 +20,10 @@ class Base64ImageField(serializers.ImageField):
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
+    """Сериализатор пользователя"""
 
     first_name = serializers.CharField(required=True)
-    last_name = serializers.CharField(required=True)   
+    last_name = serializers.CharField(required=True)
 
     email = serializers.EmailField(
         required=True,
@@ -36,14 +39,14 @@ class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ('email', 'id', 'username', 'first_name',
-                'last_name', 'avatar', 'is_subscribed')
+                  'last_name', 'avatar', 'is_subscribed')
         extra_kwargs = {'password': {'write_only': True}}
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             return Follow.objects.filter(user=request.user,
-                                        author=obj).exists()
+                                         author=obj).exists()
         return False
 
 
@@ -109,7 +112,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             return obj.favorites.filter(user=request.user).exists()
         return False
-    
+
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
@@ -122,7 +125,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             instance.tags.all(), many=True
         ).data
         return representation
-    
+
     def validate(self, data):
 
         ingredients = self.initial_data.get('ingredients')
@@ -229,7 +232,7 @@ class FollowSerializer(CustomUserSerializer):
             limit = int(limit)
             recipes = recipes[:limit]
         return RecipeShortSerializer(recipes, many=True,
-                                    context={'request': request}).data
+                                     context={'request': request}).data
 
     @staticmethod
     def get_recipes_count(obj):
