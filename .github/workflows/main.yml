@@ -71,6 +71,10 @@ jobs:
     name: Push frontend Docker image to DockerHub
     runs-on: ubuntu-latest
     steps:
+      - name: Check secrets (debug)
+        run: |
+          echo "Username length: ${{ secrets.DOCKER_USERNAME }}" | wc -c
+          echo "Password length: ${{ secrets.DOCKER_PASSWORD }}" | wc -c
       - name: Check out the repo
         uses: actions/checkout@v3
       - name: Set up Docker Buildx
