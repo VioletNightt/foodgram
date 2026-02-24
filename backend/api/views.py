@@ -1,16 +1,15 @@
+from api.serializers import (CustomUserSerializer, FollowSerializer,
+                             IngredientSerializer, RecipeSerializer,
+                             RecipeShortSerializer, TagSerializer)
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
+from recipes.models import (Favorite, Follow, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-
-from api.serializers import (CustomUserSerializer, FollowSerializer,
-                             IngredientSerializer, RecipeSerializer,
-                             RecipeShortSerializer, TagSerializer)
-from recipes.models import (Favorite, Follow, Ingredient, Recipe,
-                            RecipeIngredient, ShoppingCart, Tag)
 from users.models import User
 
 from .filters import RecipeFilter
