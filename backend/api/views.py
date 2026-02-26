@@ -123,7 +123,7 @@ class IngredientViewSet(mixins.ListModelMixin,
     serializer_class = IngredientSerializer
     pagination_class = None
     filter_backends = (DjangoFilterBackend,)
-    search_fields = ('^name',)
+    search_fields = ('^name', 'name')
     permission_classes = (permissions.AllowAny,)
 
 
