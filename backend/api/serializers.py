@@ -49,11 +49,13 @@ class CustomUserSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {field: 'Поле не может быть пустым'})
 
-        if 'username' in data and User.objects.filter(username=data['username']).exists():
+        if 'username' in data and User.objects.filter(
+           username=data['username']).exists():
             raise serializers.ValidationError(
                 {'username': 'Пользователь с таким именем уже существует'})
 
-        if 'email' in data and User.objects.filter(email=data['email']).exists():
+        if 'email' in data and User.objects.filter(
+                email=data['email']).exists():
             raise serializers.ValidationError(
                 {'email': 'Пользователь с таким email уже существует'})
 
