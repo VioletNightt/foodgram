@@ -43,24 +43,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
                   'last_name', 'avatar', 'is_subscribed')
         extra_kwargs = {'password': {'write_only': True}}
 
-    def validate(self, data):
-        for field in ['first_name', 'last_name', 'email', 'username']:
-            if field in data and not data[field].strip():
-                raise serializers.ValidationError(
-                    {field: 'Поле не может быть пустым'})
-
-        if 'username' in data and User.objects.filter(
-           username=data['username']).exists():
-            raise serializers.ValidationError(
-                {'username': 'Пользователь с таким именем уже существует'})
-
-        if 'email' in data and User.objects.filter(
-                email=data['email']).exists():
-            raise serializers.ValidationError(
-                {'email': 'Пользователь с таким email уже существует'})
-
-        return data
-
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
