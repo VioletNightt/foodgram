@@ -8,7 +8,7 @@ from djoser.views import UserViewSet
 from foodgram_backend.settings import DOMAIN
 from recipes.models import (Favorite, Follow, Ingredient, Recipe,
                             RecipeIngredient, ShoppingCart, Tag)
-from rest_framework import mixins, permissions, status, viewsets
+from rest_framework import mixins, permissions, status, viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from users.models import User
@@ -121,7 +121,8 @@ class IngredientViewSet(mixins.ListModelMixin,
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
-    search_fields = ('^name',)
+    filter_backends = [filters.SearchFilter]
+    search_fields = ('i^name',)
     permission_classes = (permissions.AllowAny,)
 
 
