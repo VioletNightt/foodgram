@@ -21,16 +21,18 @@ class Base64ImageField(serializers.ImageField):
 class CustomUserSerializer(serializers.ModelSerializer):
     """Сериализатор пользователя"""
 
-    first_name = serializers.CharField(required=True)
-    last_name = serializers.CharField(required=True)
+    first_name = serializers.CharField(required=True, allow_blank=False)
+    last_name = serializers.CharField(required=True, allow_blank=False)
 
     email = serializers.EmailField(
         required=True,
-        max_length=100
+        max_length=100,
+        allow_blank=False
     )
     username = serializers.CharField(
         required=True,
-        max_length=100
+        max_length=100,
+        allow_blank=False
     )
     avatar = Base64ImageField(required=False, allow_null=True, use_url=True)
     is_subscribed = serializers.SerializerMethodField(read_only=True)
