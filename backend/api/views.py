@@ -126,6 +126,12 @@ class IngredientViewSet(mixins.ListModelMixin,
     search_fields = ('^name', 'name')
     permission_classes = (permissions.AllowAny,)
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        ingredients = sorted(queryset, key=lambda x: x.name.lower())
+        serializer = self.get_serializer(ingredients, many=True)
+        return Response(serializer.data)
+
 
 class RecipeViewSet(viewsets.ModelViewSet):
     """ViewSet для рецептов"""
