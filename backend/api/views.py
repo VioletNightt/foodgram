@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from users.models import User
 
 from .filters import IngredientFilter, RecipeFilter
-from .pagination import CustomPagination
+from .pagination import RecipesPagination
 from .permissions import IsAuthorOrReadOnly
 
 
@@ -25,7 +25,7 @@ class CustomUserViewSet(UserViewSet):
     queryset = User.objects.all()
     serializer_class = CustomUserSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
-    pagination_class = CustomPagination
+    pagination_class = RecipesPagination
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve', 'create']:
@@ -140,7 +140,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     filterset_class = RecipeFilter
-    pagination_class = CustomPagination
+    pagination_class = RecipesPagination
     permission_classes = (IsAuthorOrReadOnly,)
 
     @action(detail=True, methods=('post', 'delete'),
