@@ -16,7 +16,7 @@ from users.models import User
 
 from .filters import IngredientFilter, RecipeFilter
 from .pagination import RecipesPagination
-from .permissions import IsAuthorOrReadOnly
+from .permissions import IsAuthorOrAuthenticatedOrReadOnly
 
 
 class CustomUserViewSet(UserViewSet):
@@ -141,7 +141,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     serializer_class = RecipeSerializer
     filterset_class = RecipeFilter
     pagination_class = RecipesPagination
-    permission_classes = (IsAuthorOrReadOnly,)
+    permission_classes = (IsAuthorOrAuthenticatedOrReadOnly,)
 
     @action(detail=True, methods=('post', 'delete'),
             permission_classes=(permissions.IsAuthenticated,))
