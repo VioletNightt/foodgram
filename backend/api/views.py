@@ -31,8 +31,8 @@ class CustomUserViewSet(UserViewSet):
     pagination_class = RecipesPagination
 
     @action(detail=False, methods=['get'],)
-    def me(self, request):
-        return super().me()
+    def me(self, request, *args, **kwargs):
+        return super().me(request, *args, **kwargs)
 
     @action(detail=False, methods=['get'],
             permission_classes=[permissions.IsAuthenticated])
