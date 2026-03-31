@@ -27,7 +27,8 @@ class UserSerializer(DjoserUserSerializer):
 
     class Meta(DjoserUserSerializer.Meta):
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'avatar', 'is_subscribed')
+        fields = ('id', 'username', 'email', 'first_name',
+                  'last_name', 'avatar', 'is_subscribed')
 
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
