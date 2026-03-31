@@ -123,10 +123,8 @@ class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = (
-            'id', 'name', 'image', 'text',
+            'name', 'image', 'text',
             'ingredients', 'tags', 'cooking_time',
-            'author', 'is_favorited',
-            'is_in_shopping_cart'
         )
 
     def to_representation(self, instance):
@@ -182,7 +180,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         RecipeIngredient.objects.bulk_create(recipe_ingredients)
 
     def create(self, validated_data):
-        ingredients_data = validated_data.pop('recipe_ingredient')
+        ingredients_data = validated_data.pop('ingredients')
         tags_data = validated_data.pop('tags')
         validated_data['author'] = self.context['request'].user
 
@@ -194,7 +192,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         tags_data = validated_data.pop('tags')
-        ingredients_data = validated_data.pop('recipe_ingredient')
+        ingredients_data = validated_data.pop('ingredients')
         instance = super().update(instance, validated_data)
 
         instance.tags.set(tags_data)
