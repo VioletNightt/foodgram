@@ -2,7 +2,7 @@ import base64
 
 from django.core.files.base import ContentFile
 from rest_framework import serializers
-from djoser.serializers import UserSerializer
+from djoser.serializers import UserSerializer as DjoserUserSerializer
 
 from recipes.models import (Follow, Ingredient, Recipe,
                             RecipeIngredient, Tag, Favorite, ShoppingCart)
@@ -19,6 +19,22 @@ class Base64ImageField(serializers.ImageField):
             data = ContentFile(base64.b64decode(imgstr), name='temp.' + ext)
 
         return super().to_internal_value(data)
+
+
+class UserSerializer(DjoserUserSerializer):
+    avatar = Base64ImageField(required=False, allow_null=True, use_url=True)
+    is_subscribed = serializers.SerializerMethodField(read_only=True)
+
+    class Meta(DjoserUserSerializer.Meta):
+        fields = DjoserUserSerializer.Meta.fields + ('avatar', 'is_subscribed')
+
+    def get_is_subscribed(self, obj):
+        request = self.context.get('request')
+        return bool(
+            request
+            and request.user.is_authenticated
+            and Follow.objects.filter(user=request.user, author=obj).exists()
+        )
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -79,7 +95,7 @@ class ReadRecipeSerializer(serializers.ModelSerializer):
         source='recipe_ingredient', many=True
     )
     tags = TagSerializer(many=True)
-    author = UserSerializer()
+    author = UserSerializer(read_only=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
