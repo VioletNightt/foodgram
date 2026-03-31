@@ -1,23 +1,22 @@
-from api.serializers import (FavoriteSerializer, ShoppingCartSerializer, UserSerializer, FollowSerializer,
-                             IngredientSerializer, RecipeSerializer,
-                             RecipeShortSerializer, TagSerializer,
-                             ReadFollowSerializer, ReadRecipeSerializer,
-                             ReadRecipeIngredientSerializer,
-                             AvatarSerializer
-                             )
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from foodgram_backend.settings import DOMAIN
-from recipes.models import (Favorite, Follow, Ingredient, Recipe,
-                            RecipeIngredient, ShoppingCart, Tag)
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from users.models import User
 
+from users.models import User
+from foodgram_backend.settings import DOMAIN
+from recipes.models import (Favorite, Follow, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
+from api.serializers import (FavoriteSerializer, ShoppingCartSerializer,
+                             UserSerializer, FollowSerializer,
+                             IngredientSerializer, RecipeSerializer,
+                             TagSerializer, ReadFollowSerializer,
+                             AvatarSerializer
+                             )
 from .filters import IngredientFilter, RecipeFilter
 from .pagination import RecipesPagination
 from .permissions import IsAuthorOrAuthenticatedOrReadOnly
