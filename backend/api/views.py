@@ -30,7 +30,8 @@ class CustomUserViewSet(UserViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = RecipesPagination
 
-    @action(detail=False, methods=['get'],)
+    @action(detail=False, methods=['get'],
+            permission_classes=[permissions.IsAuthenticated])
     def me(self, request, *args, **kwargs):
         return super().me(request, *args, **kwargs)
 

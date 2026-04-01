@@ -247,6 +247,8 @@ class ReadFollowSerializer(UserSerializer):
 
     def get_recipes(self, obj):
         request = self.context.get('request')
+        if not request:
+            return []
         limit = request.query_params.get('recipes_limit', None)
         recipes = obj.recipes.all()
         if limit:
