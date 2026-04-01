@@ -129,6 +129,10 @@ REST_FRAMEWORK = {
 DJOSER = {
     'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
+    'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
+    'PERMISSIONS': {
+        'user_list': ['rest_framework.permissions.AllowAny']
+    },
     'SERIALIZERS': {
         'user': 'api.serializers.UserSerializer',
         'current_user': 'api.serializers.UserSerializer',
