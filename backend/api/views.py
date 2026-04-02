@@ -46,7 +46,7 @@ class CustomUserViewSet(UserViewSet):
                                           context={'request': request})
         return self.get_paginated_response(serializer.data)
 
-    @action(detail=True, methods=['post'),
+    @action(detail=True, methods=['post'],
             permission_classes=[permissions.IsAuthenticated])
     def subscribe(self, request, id):
         author = get_object_or_404(User, id=id)
