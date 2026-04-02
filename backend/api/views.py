@@ -70,19 +70,21 @@ class CustomUserViewSet(UserViewSet):
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=('put', 'delete'), url_path='me/avatar',
+    @action(detail=False, methods=['put'], url_path='me/avatar',
             permission_classes=[permissions.IsAuthenticated])
     def avatar(self, request):
         user = request.user
-        if request.method == 'PUT':
-            serializer = AvatarSerializer(user, data=request.data,
-                                          context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        serializer = AvatarSerializer(user, data=request.data,
+                                      context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @avatar.mapping.delete
+    def delete_avatar(self, request):
+        user = request.user
         if not user.avatar:
-            return Response({'error': 'У пользователя нет аватара'},
+            return Response({'error': ['У пользователя нет аватара']},
                             status=status.HTTP_400_BAD_REQUEST)
         user.avatar.delete(save=True)
         return Response(status=status.HTTP_204_NO_CONTENT)
