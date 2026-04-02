@@ -46,23 +46,24 @@ class CustomUserViewSet(UserViewSet):
                                           context={'request': request})
         return self.get_paginated_response(serializer.data)
 
-    @action(
-        detail=True, methods=('post', 'delete'),
-        permission_classes=(permissions.IsAuthenticated,))
+    @action(detail=True, methods=('post'),
+            permission_classes=[permissions.IsAuthenticated])
     def subscribe(self, request, id):
         author = get_object_or_404(User, id=id)
 
-        if request.method == 'POST':
-            data = {'user': request.user.id, 'author': author.id}
-            serializer = FollowSerializer(data=data,
-                                          context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        data = {'user': request.user.id, 'author': author.id}
+        serializer = FollowSerializer(data=data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        deleted, _ = Follow.objects.filter(user=request.user,
-                                           author=author).delete()
-        if deleted == 0:
+    @subscribe.mapping.delete
+    def unsubscribe(self, request, id):
+        author = get_object_or_404(User, id=id)
+
+        deleted, _ = Follow.objects.filter(
+            user=request.user, author=author).delete()
+        if not deleted:
             return Response(
                 {'errors': ['Вы не подписаны на этого автора.']},
                 status=status.HTTP_400_BAD_REQUEST
