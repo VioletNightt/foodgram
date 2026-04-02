@@ -30,13 +30,13 @@ class CustomUserViewSet(UserViewSet):
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     pagination_class = RecipesPagination
 
-    @action(detail=False, methods=['get'],
-            permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=('get',),
+            permission_classes=(permissions.IsAuthenticated,))
     def me(self, request, *args, **kwargs):
         return super().me(request, *args, **kwargs)
 
-    @action(detail=False, methods=['get'],
-            permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=('get',),
+            permission_classes=(permissions.IsAuthenticated,))
     def subscriptions(self, request):
         """Получить список подписок текущего пользователя"""
         authors = User.objects.filter(followers__user=request.user)
@@ -46,8 +46,8 @@ class CustomUserViewSet(UserViewSet):
                                           context={'request': request})
         return self.get_paginated_response(serializer.data)
 
-    @action(detail=True, methods=['post'],
-            permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=('post',),
+            permission_classes=(permissions.IsAuthenticated,))
     def subscribe(self, request, id):
         author = get_object_or_404(User, id=id)
 
@@ -70,8 +70,8 @@ class CustomUserViewSet(UserViewSet):
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['put'], url_path='me/avatar',
-            permission_classes=[permissions.IsAuthenticated])
+    @action(detail=False, methods=('put',), url_path='me/avatar',
+            permission_classes=(permissions.IsAuthenticated,))
     def avatar(self, request):
         user = request.user
         serializer = AvatarSerializer(user, data=request.data,
@@ -120,18 +120,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
     pagination_class = RecipesPagination
     permission_classes = (IsAuthorOrAuthenticatedOrReadOnly,)
 
-    @action(detail=True, methods=('post', 'delete'),
+    @action(detail=True, methods=('post',),
             permission_classes=(permissions.IsAuthenticated,))
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
 
-        if request.method == 'POST':
-            data = {'user': request.user.id, 'recipe': recipe.id}
-            serializer = FavoriteSerializer(data=data,
-                                            context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        data = {'user': request.user.id, 'recipe': recipe.id}
+        serializer = FavoriteSerializer(data=data,
+                                        context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @favorite.mapping.delete
+    def delete_favorite(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, pk=pk)
 
         deleted, _ = Favorite.objects.filter(user=request.user,
                                              recipe=recipe).delete()
@@ -140,18 +143,21 @@ class RecipeViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post', 'delete'],
-            permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=('post',),
+            permission_classes=(permissions.IsAuthenticated))
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
 
-        if request.method == 'POST':
-            data = {'user': request.user.id, 'recipe': recipe.id}
-            serializer = ShoppingCartSerializer(data=data,
-                                                context={'request': request})
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        data = {'user': request.user.id, 'recipe': recipe.id}
+        serializer = ShoppingCartSerializer(data=data,
+                                            context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @shopping_cart.mapping.delete
+    def delete_shopping_cart(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, pk=pk)
 
         deleted, _ = ShoppingCart.objects.filter(user=request.user,
                                                  recipe=recipe).delete()
@@ -160,8 +166,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['get'],
-            permission_classes=[permissions.IsAuthenticated],
+    @action(detail=False, methods=('get',),
+            permission_classes=(permissions.IsAuthenticated,),
             url_path='download_shopping_cart')
     def download_shopping_cart(self, request):
         """Скачивает файл со списком покупок."""
@@ -171,12 +177,14 @@ class RecipeViewSet(viewsets.ModelViewSet):
         ).values(
             'ingredient__name',
             'ingredient__measurement_unit'
-        ).annotate(sum=Sum('amount'))
+        ).annotate(
+            total=Sum('amount')
+        ).order_by('ingredient__name').distinct()
         shopping_list = ''
         for ingredient in ingredients:
             shopping_list += (
-                f"{ingredient['ingredient__name']} - "
-                f"{ingredient['sum']}"
+                f"{ingredient['ingredient__name']} - "  
+                f"{ingredient['total']} "
                 f"({ingredient['ingredient__measurement_unit']})\n"
             )
         return HttpResponse(shopping_list, content_type='text/plain')
