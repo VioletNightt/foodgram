@@ -144,7 +144,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=('post',),
-            permission_classes=(permissions.IsAuthenticated))
+            permission_classes=(permissions.IsAuthenticated,))
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
 
