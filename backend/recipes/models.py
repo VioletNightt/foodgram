@@ -3,6 +3,7 @@ import string
 
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+
 from users.models import User
 from api.consts import (
     TAG_MAX_LENGTH, INGREDIENT_MAX_LENGTH,
@@ -25,7 +26,7 @@ class Tag(models.Model):
     class Meta:
         verbose_name = 'Тег'
         verbose_name_plural = 'Теги'
-        ordering = ('name')
+        ordering = ('name',)
 
     def __str__(self):
         return self.name
