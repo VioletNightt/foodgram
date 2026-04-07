@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
-from rest_framework import mixins, permissions, status, viewsets
+from rest_framework import mixins, permissions, status, viewsets, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -22,7 +22,7 @@ from .pagination import RecipesPagination
 from .permissions import IsAuthorOrAuthenticatedOrReadOnly
 
 
-class CustomUserViewSet(UserViewSet):
+class UserActionsViewSet(UserViewSet):
     """ViewSet для пользователя"""
 
     queryset = User.objects.all()
@@ -64,10 +64,8 @@ class CustomUserViewSet(UserViewSet):
         deleted, _ = Follow.objects.filter(
             user=request.user, author=author).delete()
         if not deleted:
-            return Response(
-                {'errors': ['Вы не подписаны на этого автора.']},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            raise serializers.ValidationError(
+                {'errors': ['Вы не подписаны на этого автора.']})
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=('put',), url_path='me/avatar',
@@ -84,8 +82,8 @@ class CustomUserViewSet(UserViewSet):
     def delete_avatar(self, request):
         user = request.user
         if not user.avatar:
-            return Response({'error': ['У пользователя нет аватара']},
-                            status=status.HTTP_400_BAD_REQUEST)
+            raise serializers.ValidationError(
+                {'error': ['У пользователя нет аватара']})
         user.avatar.delete(save=True)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -97,9 +95,7 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
 
 
-class IngredientViewSet(mixins.ListModelMixin,
-                        mixins.RetrieveModelMixin,
-                        viewsets.GenericViewSet):
+class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     """ViewSet для ингридиентов."""
 
     queryset = Ingredient.objects.all()
@@ -139,8 +135,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         deleted, _ = Favorite.objects.filter(user=request.user,
                                              recipe=recipe).delete()
         if not deleted:
-            return Response({'errors': ['Рецепт не в избранном']},
-                            status=status.HTTP_400_BAD_REQUEST)
+            raise serializers.ValidationError(
+                {'errors': ['Рецепт не в избранном']})
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=('post',),
@@ -162,8 +158,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         deleted, _ = ShoppingCart.objects.filter(user=request.user,
                                                  recipe=recipe).delete()
         if not deleted:
-            return Response({'errors': ['Рецепт не в избранном']},
-                            status=status.HTTP_400_BAD_REQUEST)
+            raise serializers.ValidationError(
+                {'errors': ['Рецепт не в корзине']})
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=('get',),

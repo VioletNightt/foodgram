@@ -2,7 +2,6 @@ import base64
 
 from django.core.files.base import ContentFile
 from rest_framework import serializers
-from djoser.serializers import UserSerializer as DjoserUserSerializer
 
 from recipes.models import (Follow, Ingredient, Recipe,
                             RecipeIngredient, Tag, Favorite, ShoppingCart)
@@ -21,11 +20,11 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-class UserSerializer(DjoserUserSerializer):
+class UserSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=False, allow_null=True, use_url=True)
     is_subscribed = serializers.SerializerMethodField(read_only=True)
 
-    class Meta(DjoserUserSerializer.Meta):
+    class Meta:
         model = User
         fields = ('id', 'username', 'email', 'first_name',
                   'last_name', 'avatar', 'is_subscribed')
@@ -72,16 +71,6 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all(),
                                             source='ingredient')
     amount = serializers.IntegerField()
-
-    @staticmethod
-    def validate_amount(value):
-        """Метод валидации количества"""
-
-        if value < 1:
-            raise serializers.ValidationError(
-                'Количество ингредиента должно быть больше 0'
-            )
-        return value
 
     class Meta:
         """Мета-параметры сериализатора"""

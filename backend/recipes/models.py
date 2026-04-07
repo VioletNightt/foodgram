@@ -8,7 +8,8 @@ from users.models import User
 from api.consts import (
     TAG_MAX_LENGTH, INGREDIENT_MAX_LENGTH,
     MEASUREMENT_UNIT_MAX_LENGTH, RECIPE_NAME_MAX_LENGTH,
-    MIN_COOKING_TIME, MAX_COOKING_TIME, MIN_AMOUNT, MAX_AMOUNT
+    MIN_COOKING_TIME, MAX_COOKING_TIME, MIN_AMOUNT, MAX_AMOUNT,
+    SHORT_CODE_MAX_LENGHT
 )
 
 
@@ -89,25 +90,12 @@ class Recipe(models.Model):
     created_at = models.DateTimeField(auto_now_add=True,
                                       verbose_name='Время создания')
     short_code = models.CharField(
-        max_length=10,
+        max_length=SHORT_CODE_MAX_LENGHT,
         unique=True,
         blank=True,
         null=True,
         verbose_name='Короткий код'
     )
-
-    def generate_unique_code(self, length=6):
-        """Генерирует уникальный код из букв и цифр."""
-        while True:
-            code = ''.join(random.choices(
-                string.ascii_letters + string.digits, k=length))
-            if not Recipe.objects.filter(short_code=code).exists():
-                return code
-
-    def save(self, *args, **kwargs):
-        if not self.pk and not self.short_code:
-            self.short_code = self.generate_unique_code()
-        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Рецепт'
@@ -116,6 +104,19 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.short_code:
+            self.short_code = self.generate_unique_code()
+        super().save(*args, **kwargs)
+
+    def generate_unique_code(self, length=6):
+        """Генерирует уникальный код из букв и цифр."""
+        while True:
+            code = ''.join(random.choices(
+                string.ascii_letters + string.digits, k=length))
+            if not Recipe.objects.filter(short_code=code).exists():
+                return code
 
 
 class RecipeIngredient(models.Model):
