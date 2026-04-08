@@ -67,7 +67,7 @@ docker-compose exec backend python manage.py loaddata ingredients.json
 Как открыть документацию API
 После запуска проекта документация в формате ReDoc (или Swagger UI) доступна по адресу:
 
-https://ваш_домен/api/docs/
+https://foodgramnight.viewdns.net/api/docs/
 
 при локальном запуске: http://localhost/api/docs/
 
